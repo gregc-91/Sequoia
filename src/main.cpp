@@ -26,7 +26,6 @@ const int K = 8;
 #define MAX_LENGTH 256
 #define WHITESPACE " \t\n"
 
-
 //
 // Faster than builtin strtok but maybe less robust
 //
@@ -49,97 +48,6 @@ char* gstrtok(char** s, const char* delims)
 	}
 
 	return NULL;
-}
-
-//
-// Simple and fast atof (ascii to float) function.
-//
-// - Executes about 5x faster than standard MSCRT library atof().
-// - An attractive alternative if the number of calls is in the millions.
-// - Assumes input is a proper integer, fraction, or scientific format.
-// - Matches library atof() to 15 digits (except at extreme exponents).
-// - Follows atof() precedent of essentially no error checking.
-//
-// 09-May-2009 Tom Van Baak (tvb) www.LeapSecond.com
-//
-#define white_space(c) ((c) == ' ' || (c) == '\t')
-#define valid_digit(c) ((c) >= '0' && (c) <= '9')
-
-double atof (const char *p)
-{
-    int frac;
-    double sign, value, scale;
-
-    // Skip leading white space, if any.
-
-    while (white_space(*p) ) {
-        p += 1;
-    }
-
-    // Get sign, if any.
-
-    sign = 1.0;
-    if (*p == '-') {
-        sign = -1.0;
-        p += 1;
-
-    } else if (*p == '+') {
-        p += 1;
-    }
-
-    // Get digits before decimal point or exponent, if any.
-
-    for (value = 0.0; valid_digit(*p); p += 1) {
-        value = value * 10.0 + (*p - '0');
-    }
-
-    // Get digits after decimal point, if any.
-
-    if (*p == '.') {
-        double pow10 = 10.0;
-        p += 1;
-        while (valid_digit(*p)) {
-            value += (*p - '0') / pow10;
-            pow10 *= 10.0;
-            p += 1;
-        }
-    }
-
-    // Handle exponent, if any.
-
-    frac = 0;
-    scale = 1.0;
-    if ((*p == 'e') || (*p == 'E')) {
-        unsigned int expon;
-
-        // Get sign of exponent, if any.
-
-        p += 1;
-        if (*p == '-') {
-            frac = 1;
-            p += 1;
-
-        } else if (*p == '+') {
-            p += 1;
-        }
-
-        // Get digits of exponent, if any.
-
-        for (expon = 0; valid_digit(*p); p += 1) {
-            expon = expon * 10 + (*p - '0');
-        }
-        if (expon > 308) expon = 308;
-
-        // Calculate scaling factor.
-
-        while (expon >= 50) { scale *= 1E50; expon -= 50; }
-        while (expon >=  8) { scale *= 1E8;  expon -=  8; }
-        while (expon >   0) { scale *= 10.0; expon -=  1; }
-    }
-
-    // Return signed and scaled floating point result.
-
-    return sign * (frac ? (value / scale) : (value * scale));
 }
 
 std::vector<Triangle> loadOBJFromFile(std::string filename)
@@ -213,52 +121,6 @@ std::vector<Triangle> loadOBJFromFile(std::string filename)
 				vertex_buffer[index_buffer[i + 2]]));
 	}
 	return triangles;
-}
-
-//simdi<K> casttest(simdf<K> a)
-//{
-//	return simdi<K>::cast(a);
-//}
-
-simdf<1> addtest8(simdf<1> a, simdf<1> b)
-{
-	return a + b;
-}
-
-simdf<4> addtest4(simdf<4> a, simdf<4> b)
-{
-	return a + b;
-}
-
-simdf<8> addtest8(simdf<8> a, simdf<8> b)
-{
-	return a + b;
-}
-
-simdf<1> maxtest8(simdf<1> a, simdf<1> b)
-{
-	return smd::max(a, b);
-}
-
-simdf<4> maxtest4(simdf<4> a, simdf<4> b)
-{
-	return smd::max(a, b);
-}
-
-simdf<8> maxtest8(simdf<8> a, simdf<8> b)
-{
-	return smd::max(a, b);
-}
-
-//unsigned movemasktest(simdi<8> a)
-//{
-//	return smd::movemask(a);
-//}
-
-AABBh grow_test(AABBh a, simdf<4> b)
-{
-	a.grow(b);
-	return a;
 }
 
 simdi<K> intersect_ray_tri(Hierarchy &hierarchy, Ray<K> &ray, unsigned index)
