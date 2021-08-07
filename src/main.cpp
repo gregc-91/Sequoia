@@ -525,6 +525,25 @@ void bundle_test()
 
 	print_traverse_stats();
 }
+
+void usage()
+{
+	printf("Usage:\n");
+	printf("    sequoia <scene.obj> [<args>]\n");
+	printf("        args:\n");
+	printf("            builder <type> : Specify the builder to use. One of the following:\n");
+	printf("                recursive      : A topdown recursive builder that uses openmp tasks to parallelise each split task\n");
+	printf("                horizontal     : A hybrid builder parallelising across primitives near the root and switching to recursive\n");
+	printf("                grid           : A hybrid builder binning triangles to a grid and launching a build for each cell\n");
+	printf("                grid_sse       : A version of grid that uses SIMD across x,y,z\n");
+	printf("                grid_avx       : A version of grid that uses SIMD across 8 input primitives\n");
+	printf("                morton         : A builder based on partitioning a morton curve\n");
+	printf("            tracer  <type> : Specify the traverser to use. One of the following:\n");
+	printf("                basic          : A single ray traverser\n");
+	printf("                packet <n>     : A packet traverser of n rays\n");
+	printf("                bundle <n>     : A bundle traverser of n rays\n");
+	printf("            threads <n>    : Maximum number of threads\n");
+}
 	
 int main(int argc, char** argv)
 {
