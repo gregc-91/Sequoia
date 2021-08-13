@@ -24,6 +24,7 @@
 const int K = 8;
 uint32_t kNumThreads = 16;
 bool benchmark_mode = false;
+std::string filename;
 
 #define MAX_LENGTH 256
 #define WHITESPACE " \t\n"
@@ -400,7 +401,7 @@ void benchmark()
 	uint32_t i = 0;
 		
 	t[i++] = clock(); 	
-	std::vector<Triangle> primitives = loadOBJFromFile(std::string("c:/users/greg/documents/sponza.obj"));
+	std::vector<Triangle> primitives = loadOBJFromFile(filename);
     t[i++] = clock(); 
 
 	Builder::build_hierarchy(primitives);
@@ -456,7 +457,13 @@ Arguments parse_arguments(int argc, char** argv)
 	args.traverser_type = TraverserType::basic;
 	args.packet_width = 8;
 
-	int i = 1;
+	if (argc < 2) {
+		printf("Error: not enough arguments\n");
+		exit(0);
+	}
+	filename = argv[1];
+
+	int i = 2;
 	while (i < argc) {
 		
 		if (std::string(argv[i]).compare("-builder") == 0) {
