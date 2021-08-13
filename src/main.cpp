@@ -383,9 +383,10 @@ void rt_test()
 
 	unsigned kx = floor(sqrt(k));
 	unsigned ky = k / kx;
+
+	omp_set_num_threads(64);
 	
 	t = clock(); 
-	for (unsigned iter = 0; iter < 500; iter++) {
 	#pragma omp parallel for
 	for (unsigned j = 0; j < h; j+= ky) {
 		for (unsigned i = 0; i < w; i+= kx) {
@@ -422,10 +423,9 @@ void rt_test()
 			}
 		}
 	}
-	}
 	printf("Traverse time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
 	
-	stbi_write_bmp("out.bmp", w, h, 3, image_buffer);
+	stbi_write_bmp("out1.bmp", w, h, 3, image_buffer);
 }
 
 uint32_t morton_lut[64] = {
@@ -461,9 +461,10 @@ void bundle_test()
 	t = clock(); 
 	printf("Nodes counted %d\n", count_nodes(hierarchy));
 	printf("Count time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
+
+	omp_set_num_threads(64);
 	
 	t = clock(); 
-	for (unsigned iter = 0; iter < 1000; iter++) {
 	#pragma omp parallel for
 	for (unsigned j = 0; j < h; j+= tile_h) {
 		for (unsigned i = 0; i < w; i+= tile_w) {
@@ -518,7 +519,6 @@ void bundle_test()
 			}
 		}
 	}
-	}
 	printf("Traverse time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
 	
 	stbi_write_bmp("out.bmp", w, h, 3, image_buffer);
@@ -547,10 +547,10 @@ void usage()
 	
 int main(int argc, char** argv)
 {
-	omp_set_num_threads(1);
+	omp_set_num_threads(64);
 	
 	//sort_test();
-	//rt_test();
+	rt_test();
 	bundle_test();
 	exit(0);
 	
