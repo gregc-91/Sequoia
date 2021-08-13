@@ -104,7 +104,7 @@ void setup(std::vector<Triangle> &primitives, std::vector<uint32_t> &triangleIds
 	}
 	
 	double omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", (double)(omp_t2-omp_t1));
+	//printf("Setup time %f\n", (double)(omp_t2-omp_t1));
 }
 
 #pragma omp declare reduction(growaabb  : AABB1 : omp_out = omp_out.combine(omp_in)) initializer (omp_priv=AABB1(FLT_MAX,-FLT_MAX))
@@ -153,7 +153,7 @@ void setup_reduction(std::vector<Triangle> &primitives, std::vector<uint32_t> &t
 	}
 	
 	double omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", (double)(omp_t2-omp_t1));
+	//printf("Setup time %f\n", (double)(omp_t2-omp_t1));
 }
 
 void setup_sse(std::vector<Triangle> &primitives, std::vector<uint32_t> &triangleIds, std::vector<AABBh> &aabbs, std::vector<simdf<4>> &centres, AABBh &p_aabb, AABBh &c_aabb)
@@ -211,7 +211,7 @@ void setup_sse(std::vector<Triangle> &primitives, std::vector<uint32_t> &triangl
 	}
 	
 	auto omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", omp_t2-omp_t1);
+	//printf("Setup time %f\n", omp_t2-omp_t1);
 }
 
 
@@ -254,7 +254,7 @@ void setup_sse_reduction(std::vector<Triangle> &primitives, std::vector<uint32_t
 	}
 	
 	auto omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", omp_t2-omp_t1);
+	//printf("Setup time %f\n", omp_t2-omp_t1);
 }
 
 void setup_m128(std::vector<Triangle> &primitives, std::vector<uint32_t> &triangleIds, std::vector<AABBm> &aabbs, std::vector<__m128> &centres, AABBm &p_aabb, AABBm &c_aabb)
@@ -314,7 +314,7 @@ void setup_m128(std::vector<Triangle> &primitives, std::vector<uint32_t> &triang
 	}
 	
 	auto omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", omp_t2-omp_t1);
+	//printf("Setup time %f\n", omp_t2-omp_t1);
 }
 
 void setup_m128_red(std::vector<Triangle> &primitives, std::vector<uint32_t> &triangleIds, std::vector<AABBm> &aabbs, std::vector<__m128> &centres, AABBm &p_aabb, AABBm &c_aabb)
@@ -358,7 +358,7 @@ void setup_m128_red(std::vector<Triangle> &primitives, std::vector<uint32_t> &tr
 	}
 	
 	auto omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", omp_t2-omp_t1);
+	//printf("Setup time %f\n", omp_t2-omp_t1);
 }
 
 int choose_axis(AABB1 &aabb)
@@ -1653,9 +1653,8 @@ Hierarchy Builder::build_hierarchy(std::vector<Triangle> &primitives)
 			hierarchy.root_index = root_index;
 			hierarchy.tri_base = &primitives[0];
 			
-			printf("Done building\n");
-			
-			printf("Nodes counted %d\n", count_nodes(hierarchy, root_index));
+			//printf("Done building\n");
+			//printf("Nodes counted %d\n", count_nodes(hierarchy, root_index));
 		}
 	}
 	
@@ -1705,9 +1704,8 @@ Hierarchy Builder::build_hierarchy_horizontal(std::vector<Triangle> &primitives)
 		}
 	}
 	
-	printf("Done building\n");
-	
-	printf("Nodes counted %d\n", count_nodes(hierarchy, root_index));
+	//printf("Done building\n");
+	//printf("Nodes counted %d\n", count_nodes(hierarchy, root_index));
 	
 	return hierarchy;
 }
@@ -1890,7 +1888,7 @@ void bin_centroids_to_grid_sse(const std::vector<AABBh>   &aabbs,
 	}
 	
 	auto omp_t2 = omp_get_wtime();
-	printf("Phase1 time %f\n", omp_t2-omp_t1);
+	//printf("Phase1 time %f\n", omp_t2-omp_t1);
 }
 
 void bin_centroids_to_grid_sse_reduction(const std::vector<AABBh>   &aabbs,
@@ -1962,7 +1960,7 @@ void bin_centroids_to_grid_sse_reduction(const std::vector<AABBh>   &aabbs,
 	}
 	
 	auto omp_t2 = omp_get_wtime();
-	printf("Phase1 time %f\n", omp_t2-omp_t1);
+	//printf("Phase1 time %f\n", omp_t2-omp_t1);
 }
 
 void bin_centroids_to_grid_m128(const std::vector<AABBm>     &aabbs,
@@ -2260,7 +2258,7 @@ Hierarchy Builder::build_hierarchy_grid(std::vector<Triangle> &primitives)
 	hierarchy.node_base  = nodes;
 	hierarchy.root_index = 0;
 			
-	printf("Nodes counted %d\n", count_nodes(hierarchy, hierarchy.root_index));
+	//printf("Nodes counted %d\n", count_nodes(hierarchy, hierarchy.root_index));
 	
 	return hierarchy;
 }
@@ -2310,7 +2308,7 @@ void setup_morton(std::vector<Triangle> &primitives, std::vector<RadixInput32> &
 	}
 	
 	double omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", (double)(omp_t2-omp_t1));
+	//printf("Setup time %f\n", (double)(omp_t2-omp_t1));
 }
 
 typedef struct alignas(16) RadixInput64 {
@@ -2357,7 +2355,7 @@ void setup_morton2(std::vector<Triangle> &primitives, std::vector<RadixInput64> 
 	}
 	
 	double omp_t2 = omp_get_wtime();
-	printf("Setup time %f\n", (double)(omp_t2-omp_t1));
+	//printf("Setup time %f\n", (double)(omp_t2-omp_t1));
 }
 
 unsigned find_split_morton(std::vector<RadixInput32>::iterator begin, std::vector<RadixInput32>::iterator end)
@@ -2566,15 +2564,10 @@ Hierarchy Builder::build_hierarchy_morton(std::vector<Triangle> &primitives)
 	// Create morton codes
 	setup_morton(primitives, morton_codes, scene_aabb);
 	
-	printf("Setup done\n");
-	
 	// Sort indices by morton code
 	double t1 = omp_get_wtime();
 	radixSort<uint32_t, RadixInput32>(morton_codes.begin(), morton_codes.end(), scratch.begin(), scratch.end(), 8);
-	printf("Sort time %f\n", omp_get_wtime() - t1);
-	
-	printf("Sort done\n");
-	
+
 	// Morton recurse
 	unsigned count;
 	#pragma omp parallel shared(morton_codes, nodes, count) num_threads(16)
@@ -2584,8 +2577,6 @@ Hierarchy Builder::build_hierarchy_morton(std::vector<Triangle> &primitives)
 			count = recurse_morton(morton_codes.begin(), morton_codes.end(), nodes, 1);
 		}
 	}
-	
-	printf("Recurse done\n");
 	
 	Node1 &root = nodes[0];
 	root.child = 1;
@@ -2615,15 +2606,10 @@ Hierarchy Builder::build_hierarchy_morton2(std::vector<Triangle> &primitives)
 	// Create morton codes
 	setup_morton2(primitives, morton_codes, scene_aabb);
 	
-	printf("Setup done\n");
-	
 	// Sort indices by morton code
 	double t1 = omp_get_wtime();
 	radixSort<uint64_t, RadixInput64>(morton_codes.begin(), morton_codes.end(), scratch.begin(), scratch.end(), 8);
-	printf("Sort time %f\n", omp_get_wtime() - t1);
-	
-	printf("Sort done\n");
-	
+
 	// Morton recurse
 	unsigned count;
 	#pragma omp parallel shared(morton_codes, nodes, count) num_threads(16)

@@ -22,9 +22,33 @@
 #include "stb_image_write.h"
 
 const int K = 8;
+uint32_t kNumThreads = 16;
+bool benchmark_mode = false;
 
 #define MAX_LENGTH 256
 #define WHITESPACE " \t\n"
+
+enum class BuilderType {
+	recursive,
+	horizontal,
+	grid,
+	grid_sse,
+	grid_avx,
+	morton
+};
+
+enum class TraverserType {
+	basic,
+	packet,
+	bundle
+};
+
+struct Arguments {
+	BuilderType builder_type;
+	TraverserType traverser_type;
+	uint32_t packet_width;
+	uint32_t bundle_width;
+};
 
 //
 // Faster than builtin strtok but maybe less robust
@@ -370,103 +394,145 @@ void bundle_test()
 	print_traverse_stats();
 }
 
+void benchmark()
+{
+	clock_t t[10];
+	uint32_t i = 0;
+		
+	t[i++] = clock(); 	
+	std::vector<Triangle> primitives = loadOBJFromFile(std::string("c:/users/greg/documents/sponza.obj"));
+    t[i++] = clock(); 
+
+	Builder::build_hierarchy(primitives);
+	t[i++] = clock(); 
+	Builder::build_hierarchy_horizontal(primitives);
+	t[i++] = clock(); 
+	Builder::build_hierarchy_grid(primitives);
+	t[i++] = clock(); 
+	Builder::build_hierarchy_grid_sse(primitives);
+	t[i++] = clock(); 
+	Builder::build_hierarchy_grid_m128(primitives);
+	t[i++] = clock(); 
+	Builder::build_hierarchy_morton(primitives);
+	t[i++] = clock(); 
+	
+	printf("Load time: %f\n", (t[1] - t[0]) / (double) CLOCKS_PER_SEC);
+	printf("\n");
+	printf("            recursive horizontal     grid   grid_sse  grid_avx   morton\n");
+	printf("build time:     % 3.0fms      % 3.0fms    % 3.0fms      % 3.0fms     % 3.0fms    % 3.0fms\n",
+		1000.0f * (t[2] - t[1]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[3] - t[2]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[4] - t[3]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[5] - t[4]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[6] - t[5]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[7] - t[6]) / (double) CLOCKS_PER_SEC
+	);
+}
+
 void usage()
 {
 	printf("Usage:\n");
 	printf("    sequoia <scene.obj> [<args>]\n");
 	printf("        args:\n");
-	printf("            builder <type> : Specify the builder to use. One of the following:\n");
+	printf("            -builder <type> : Specify the builder to use. One of the following:\n");
 	printf("                recursive      : A topdown recursive builder that uses openmp tasks to parallelise each split task\n");
 	printf("                horizontal     : A hybrid builder parallelising across primitives near the root and switching to recursive\n");
 	printf("                grid           : A hybrid builder binning triangles to a grid and launching a build for each cell\n");
 	printf("                grid_sse       : A version of grid that uses SIMD across x,y,z\n");
 	printf("                grid_avx       : A version of grid that uses SIMD across 8 input primitives\n");
 	printf("                morton         : A builder based on partitioning a morton curve\n");
-	printf("            tracer  <type> : Specify the traverser to use. One of the following:\n");
+	printf("            -tracer  <type> : Specify the traverser to use. One of the following:\n");
 	printf("                basic          : A single ray traverser\n");
 	printf("                packet <n>     : A packet traverser of n rays\n");
 	printf("                bundle <n>     : A bundle traverser of n rays\n");
-	printf("            threads <n>    : Maximum number of threads\n");
+	printf("            -threads <n>    : Maximum number of threads\n");
+	printf("            -benchmark      : run a benchmark mode testing all builders and traversers\n");
+}
+
+Arguments parse_arguments(int argc, char** argv)
+{
+	Arguments args;
+	args.builder_type = BuilderType::recursive;
+	args.traverser_type = TraverserType::basic;
+	args.packet_width = 8;
+
+	int i = 1;
+	while (i < argc) {
+		
+		if (std::string(argv[i]).compare("-builder") == 0) {
+			assert(++i < argc);
+			if (std::string(argv[i]).compare("recursive") == 0) {
+				args.builder_type = BuilderType::recursive;
+			}
+			else if (std::string(argv[i]).compare("horizontal") == 0) {
+				args.builder_type = BuilderType::horizontal;
+			}
+			else if (std::string(argv[i]).compare("grid") == 0) {
+				args.builder_type = BuilderType::grid;
+			}
+			else if (std::string(argv[i]).compare("grid_sse") == 0) {
+				args.builder_type = BuilderType::grid_sse;
+			}
+			else if (std::string(argv[i]).compare("grid_avx") == 0) {
+				args.builder_type = BuilderType::grid_avx;
+			}
+			else if (std::string(argv[i]).compare("morton") == 0) {
+				args.builder_type = BuilderType::morton;
+			} 
+			else {
+				printf("Error: invalid builder type\n");
+				exit(0);
+			}
+		}
+		else if (std::string(argv[i]).compare("-tracer") == 0) {
+			assert(++i < argc);
+
+			if (std::string(argv[i]).compare("basic") == 0) {
+				args.traverser_type = TraverserType::basic;
+			}
+			else if (std::string(argv[i]).compare("packet") == 0) {
+				assert(++i < argc);
+				args.traverser_type = TraverserType::packet;
+				args.packet_width = atoi(argv[i]);
+				assert(args.packet_width == 1 || args.packet_width == 2 || args.packet_width == 4 || 
+					   args.packet_width == 8 || args.packet_width == 16);
+			}
+			else if (std::string(argv[i]).compare("bundle") == 0) {
+				assert(++i < argc);
+				args.traverser_type = TraverserType::bundle;
+				args.bundle_width = atoi(argv[i]);
+				assert(args.bundle_width == 16 || args.bundle_width == 64);
+			}
+			else {
+				printf("Error: invalid tracer type\n");
+				exit(0);
+			}
+		}
+		else if (std::string(argv[i]).compare("-threads") == 0) {
+			assert(++i < argc);
+			kNumThreads = atoi(argv[i]);
+		}
+		else if (std::string(argv[i]).compare("-benchmark") == 0) {
+			benchmark_mode = true;
+		}
+		i++;
+	}
+
+	return args;
 }
 	
 int main(int argc, char** argv)
 {
+	Arguments agrs = parse_arguments(argc, argv);
+
+	if (benchmark_mode) {
+		benchmark();
+		exit(0);
+	}
+
 	omp_set_num_threads(64);
 	
 	rt_test();
 	bundle_test();
 	exit(0);
-	
-	clock_t t, t2; 
-		
-	t = clock(); 
-		
-	std::vector<Triangle> primitives = loadOBJFromFile(std::string("c:/users/greg/documents/sponza.obj"));
-	
-	//#define NUM_PRIMS 16
-	//std::vector<Triangle> tmp(NUM_PRIMS);
-	//std::copy(primitives.begin(), primitives.begin()+NUM_PRIMS, tmp.begin());
-	//std::copy(primitives.begin(), primitives.end(), tmp.begin()+primitives.size());
-	//primitives = tmp;
-
-    t2 = clock();
-	auto omp_t1 = omp_get_wtime();
-	
-	//Builder::build_hierarchy(primitives);
-	//Builder::build_hierarchy_horizontal(primitives);
-	//Builder::build_hierarchy_grid(primitives);
-	//Builder::build_hierarchy_grid_sse(primitives);
-	//Builder::build_hierarchy_grid_m128(primitives);
-	//Builder::build_hierarchy_morton(primitives);
-#if 1
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-	Builder::build_hierarchy_grid_sse(primitives);
-#endif
-	
-	auto omp_t2 = omp_get_wtime();
-	
-    t = clock() - t; 
-	t2 = clock() - t2;
-    double time_taken = ((double)t)/CLOCKS_PER_SEC;
-    double build_time = ((double)t2)/CLOCKS_PER_SEC;
-	
-	printf("Time taken:  %f\n", time_taken);
-	printf("Build time:  %f\n", build_time);
-	printf("omp time:    %f\n", omp_t2-omp_t1);
-	printf("Triangles/s: %f\n", primitives.size() / build_time);
 }
