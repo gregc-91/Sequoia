@@ -101,12 +101,7 @@ void traverse_bundle(Hierarchy &hierarchy, uint32_t index, uint32_t count, RayBu
 	for (unsigned i = 0; i < count; i++) {
 		Node1 &node = hierarchy.node_base[index+i];
 
-		//bool all_miss = !isect_box_gandalf_cluster(bundle, node);
-		//if (all_miss) {
-		//	continue;	
-		//}
-	
-		bool all_hit = isect_box_gandalf_cluster_all(bundle, node);
+		bool all_hit = intersect_bundle_aabb(bundle, node);
 		bool is_leaf =!! (node.flags & AABB_FLAGS_LEAF);
 		
 		if (all_hit) {

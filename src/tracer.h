@@ -32,6 +32,27 @@ static simdi<K> intersect_ray_aabb(Node1 &aabb, Ray<K> &ray, HitAttributes<K> &a
 	return simdi<K>((back >= front) & (back <= ray.tmax));
 }
 
+// Assumes bundle shares an origin
+template <size_t K>
+static bool intersect_bundle_aabb(RayBundle<K> &bundle, Node1 &aabb) {
+	
+	vec3f1 inv_min_dir = rcp(bundle.dir_min);
+	vec3f1 inv_max_dir = rcp(bundle.dir_max);
+
+	vec3f1 t1a = (aabb.min - bundle.pos_min) * inv_min_dir;
+	vec3f1 t1b = (aabb.min - bundle.pos_min) * inv_max_dir;
+	vec3f1 t2a = (aabb.max - bundle.pos_min) * inv_min_dir;
+	vec3f1 t2b = (aabb.max - bundle.pos_min) * inv_max_dir;
+
+	vec3f1 tmin = min(max(t1a, t1b), max(t2a, t2b));
+	vec3f1 tmax = max(min(t1a, t1b), min(t2a, t2b));
+
+	float front = hmax(tmin);
+	float back  = hmin(tmax);
+
+	return back >= front;
+}
+
 template <size_t K>
 static simdi<K> intersect_ray_triangle(Triangle &tri, Ray<K> &ray, HitAttributes<K> &attributes)
 {

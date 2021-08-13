@@ -127,8 +127,6 @@ using vec3i = vec3<K, int>;
 template <size_t K = 1>
 using vec3u = vec3<K, unsigned>;
 
-
-
 struct vec3f1 {
 	enum { N  = 3 };
 	
@@ -143,6 +141,7 @@ struct vec3f1 {
 	__forceinline vec3f1(const float &a) : x(a), y(a), z(a) {}
 	__forceinline vec3f1(const float &x, const float &y, const float &z) : x(x), y(y), z(z) {}
 	__forceinline vec3f1(const vec3f1 &a) : x(a.x), y(a.y), z(a.z) {}
+	__forceinline vec3f1(const vec3<1, float> &a) : x(a.x), y(a.y), z(a.z) {}
 	__forceinline vec3f1& operator =(const vec3f1& other) { x = other.x; y = other.y; z = other.z; return *this; }
 	
 	__forceinline const float & operator [](size_t index) const { /*assert(index < N);*/ return cmpnt[index]; }
