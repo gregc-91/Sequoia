@@ -1629,7 +1629,6 @@ Hierarchy Builder::build_hierarchy(std::vector<Triangle> &primitives)
 	for (auto &bin : bins)
 		bin = std::vector<Bin>(NUM_BINS);
 	
-	omp_set_num_threads(NUM_THREADS);
 	omp_set_nested(1);
 	
 	// Initialise the triangle ids, primitive aabbs and centres, overall aabb and overall centres aabb
@@ -1678,7 +1677,6 @@ Hierarchy Builder::build_hierarchy_horizontal(std::vector<Triangle> &primitives)
 	for (auto &bin : bins)
 		bin = std::vector<Bin>(NUM_BINS);
 	
-	omp_set_num_threads(NUM_THREADS);
 	omp_set_nested(1);
 	
 	// Initialise the triangle ids, primitive aabbs and centres, overall aabb and overall centres aabb
@@ -2066,8 +2064,6 @@ Hierarchy Builder::build_hierarchy_grid_sse(std::vector<Triangle> &primitives)
 	for (auto &bin : bins)
 		bin = std::vector<Binh>(NUM_BINS);
 	
-	omp_set_num_threads(NUM_THREADS);
-	
 	// Initialise the triangle ids, primitive aabbs and centres, overall aabb and overall centres aabb
 	setup_sse_reduction(primitives, triangleIds, aabbs, centres, p_aabb, c_aabb);
 	
@@ -2141,8 +2137,6 @@ Hierarchy Builder::build_hierarchy_grid_m128(std::vector<Triangle> &primitives)
 	for (auto &bin : bins)
 		bin = std::vector<Binm>(NUM_BINS);
 	
-	omp_set_num_threads(NUM_THREADS);
-	
 	// Initialise the triangle ids, primitive aabbs and centres, overall aabb and overall centres aabb
 	setup_m128_red(primitives, triangleIds, aabbs, centres, p_aabb, c_aabb);
 	
@@ -2213,8 +2207,6 @@ Hierarchy Builder::build_hierarchy_grid(std::vector<Triangle> &primitives)
 	
 	for (auto &bin : bins)
 		bin = std::vector<Bin>(NUM_BINS);
-	
-	omp_set_num_threads(NUM_THREADS);
 	
 	// Initialise the triangle ids, primitive aabbs and centres, overall aabb and overall centres aabb
 	setup(primitives, triangleIds, aabbs, centres, p_aabb, c_aabb);
@@ -2559,8 +2551,6 @@ Hierarchy Builder::build_hierarchy_morton(std::vector<Triangle> &primitives)
 	std::vector<RadixInput32> morton_codes(primitives.size());
 	AABB1 scene_aabb;
 	
-	omp_set_num_threads(NUM_THREADS);
-	
 	// Create morton codes
 	setup_morton(primitives, morton_codes, scene_aabb);
 	
@@ -2600,8 +2590,6 @@ Hierarchy Builder::build_hierarchy_morton2(std::vector<Triangle> &primitives)
 	std::vector<RadixInput64> scratch(primitives.size());
 	std::vector<RadixInput64> morton_codes(primitives.size());
 	AABB1 scene_aabb;
-	
-	omp_set_num_threads(NUM_THREADS);
 	
 	// Create morton codes
 	setup_morton2(primitives, morton_codes, scene_aabb);

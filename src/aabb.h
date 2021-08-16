@@ -14,6 +14,15 @@ enum AABB_FLAGS {
 	AABB_FLAGS_LEAF = 0x01
 };
 
+struct Triangle {
+	vec3f1 v0;
+	vec3f1 v1;
+	vec3f1 v2;
+	
+	Triangle() {};
+	Triangle(const vec3f1 &v0, const vec3f1 &v1, const vec3f1 &v2) : v0(v0), v1(v1), v2(v2) {}
+};
+
 template <size_t K>
 struct Node {
 	vec3f<K> min;
@@ -97,12 +106,16 @@ struct AABB1 {
 	AABB1(float min, float max) : min(min), max(max) {}
 	AABB1(vec3f1 min, vec3f1 max) : min(min), max(max) {}
 	AABB1(float &x, float &y, float &z, float &X, float &Y, float &Z) : min(x, y, z), max(X, Y, Z) {}
+	AABB1(const Triangle &t) {
+		min = vec::min(vec::min(t.v0, t.v1), t.v2);
+		max = vec::max(vec::max(t.v0, t.v1), t.v2);
+	}
 	
 	__forceinline void grow(const vec3f1 &p) { min = vec::min(min, p);     max = vec::max(max, p); }
 	__forceinline void grow(const AABB1  &a) { min = vec::min(min, a.min); max = vec::max(max, a.max); }
 	
-	__forceinline AABB1 combine(const vec3f1 &p) { return AABB1(vec::min(min, p)    , vec::max(max, p)    ); }
-	__forceinline AABB1 combine(const AABB1  &a) { return AABB1(vec::min(min, a.min), vec::max(max, a.max)); }
+	__forceinline AABB1 combine(const vec3f1 &p) const { return AABB1(vec::min(min, p)    , vec::max(max, p)    ); }
+	__forceinline AABB1 combine(const AABB1  &a) const { return AABB1(vec::min(min, a.min), vec::max(max, a.max)); }
 	
 	__forceinline float sa() {
 		vec3f1 len = max - min;
@@ -158,15 +171,6 @@ struct alignas(32) AABBm {
 };
 
 __forceinline int operator ==(const AABB1& a, const AABB1& b) { return a.min == b.min && a.max == b.max; }
-
-struct Triangle {
-	vec3f1 v0;
-	vec3f1 v1;
-	vec3f1 v2;
-	
-	Triangle() {};
-	Triangle(const vec3f1 &v0, const vec3f1 &v1, const vec3f1 &v2) : v0(v0), v1(v1), v2(v2) {}
-};
 
 struct Triangle64B {
 	simdf<4> v0;

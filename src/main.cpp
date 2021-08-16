@@ -12,6 +12,7 @@
 #include <ctime>
 #include <algorithm>
 #include <vector>
+#include <numeric>
 #include <stdlib.h>
 
 #include <omp.h>
@@ -22,7 +23,7 @@
 #include "stb_image_write.h"
 
 const int K = 8;
-uint32_t kNumThreads = 16;
+uint32_t kNumThreads = 64;
 bool benchmark_mode = false;
 std::string filename;
 
@@ -49,6 +50,8 @@ struct Arguments {
 	TraverserType traverser_type;
 	uint32_t packet_width;
 	uint32_t bundle_width;
+	uint32_t w;
+	uint32_t h;
 };
 
 //
@@ -225,186 +228,104 @@ uint32_t count_nodes(Hierarchy &hierarchy)
 	return count_nodes_r(hierarchy, hierarchy.root_index);
 }
 
-void rt_test()
+Hierarchy run_builder(Arguments args, std::vector<Triangle> &primitives)
 {
-	uint32_t w = 512, h = 512;
-	//uint32_t tile_w = 16, tile_h = 16;
-	uint8_t* image_buffer = new uint8_t[w*h*3];
-	//float* depth_buffer = new float[w*h];
-	clock_t t; 
-	const unsigned k = 8;
-	
-	printf("Alignment checks\n");
-	printf("  simd1f %llu\n", alignof(simd1f));
-	printf("  simd4f %llu\n", alignof(simd4f));
-	printf("  simd8f %llu\n", alignof(simd8f));
-	printf("  vec3f8 %llu\n", alignof(vec3f<8>));
-	
-	std::vector<Triangle> primitives = loadOBJFromFile(std::string("c:/users/greg/documents/bunny.obj"));
-	
-	t = clock(); 
-	Hierarchy hierarchy = Builder::build_hierarchy_grid_sse(primitives);
-	printf("Build time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
-	
-	t = clock(); 
-	printf("Nodes counted %d\n", count_nodes(hierarchy));
-	printf("Count time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
-
-	unsigned kx = floor(sqrt(k));
-	unsigned ky = k / kx;
-
-	omp_set_num_threads(64);
-	
-	t = clock(); 
-	#pragma omp parallel for
-	for (unsigned j = 0; j < h; j+= ky) {
-		for (unsigned i = 0; i < w; i+= kx) {
-			Ray<k> ray;
-			unsigned m = 0;
-			for (unsigned my = 0; my < ky; my++) {
-				for (unsigned mx = 0; mx < kx; mx++) {
-					float x = (float)(i+mx)*0.25/w - 0.125f;
-					float y = (float)(j+my)*0.25/h;
-					ray.origin[0][m] = x;
-					ray.origin[1][m] = y;
-					ray.origin[2][m] = -1.0f;
-					ray.direction[0][m] = 0.0f;
-					ray.direction[1][m] = 0.0f;
-					ray.direction[2][m] = 1.0f;
-					ray.tmin = simdf<k>::broadcast(0.0f);
-					ray.tmax = simdf<k>::broadcast(5.0f);
-					m++;
-				}
-			}
-			HitAttributes<k> attributes;
-			
-			traverse_packet_stack(hierarchy, hierarchy.root_index, 1, ray, attributes);
-			m = 0;
-			for (unsigned my = 0; my < ky; my++) {
-				for (unsigned mx = 0; mx < kx; mx++) {
-					if (attributes.hit[m]) {
-						memset(&image_buffer[((j+my)*w+i+mx)*3], 128, 3);
-					} else {
-						memset(&image_buffer[((j+my)*w+i+mx)*3], 0, 3);
-					}
-					m++;
-				}
-			}
-		}
+	switch (args.builder_type) {
+	case BuilderType::recursive:
+		return Builder::build_hierarchy(primitives);
+	case BuilderType::horizontal:
+		return Builder::build_hierarchy_horizontal(primitives);
+	case BuilderType::grid:
+		return Builder::build_hierarchy_grid(primitives);
+	case BuilderType::grid_sse:
+		return Builder::build_hierarchy_grid_sse(primitives);
+	case BuilderType::grid_avx:
+		return Builder::build_hierarchy_grid_m128(primitives);
+	case BuilderType::morton:
+		return Builder::build_hierarchy_morton(primitives);
+	default:
+		assert(0 && "Error: Unknown builder type");
 	}
-	printf("Traverse time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
-	
-	stbi_write_bmp("out1.bmp", w, h, 3, image_buffer);
+	assert(0);
 }
 
-uint32_t morton_lut[64] = {
-	0x00,0x01,0x04,0x05,0x02,0x03,0x06,0x07,0x08,0x09,0x0C,0x0D,0x0A,0x0B,0x0E,0x0F,
-	0x10,0x11,0x14,0x15,0x12,0x13,0x16,0x17,0x18,0x19,0x1C,0x1D,0x1A,0x1B,0x1E,0x1F,
-	0x20,0x21,0x24,0x25,0x22,0x23,0x26,0x27,0x28,0x29,0x2C,0x2D,0x2A,0x2B,0x2E,0x2F,
-	0x30,0x31,0x34,0x35,0x32,0x33,0x36,0x37,0x38,0x39,0x3C,0x3D,0x3A,0x3B,0x3E,0x3F
-};
-
-void bundle_test()
+uint8_t* run_tracer(Arguments args, Hierarchy &hierarchy, vec3f1 camera)
 {
-	uint32_t w = 512, h = 512;
-	uint32_t tile_w = 4, tile_h = 4;
-	uint8_t* image_buffer = new uint8_t[w*h*3];
-	//float* depth_buffer = new float[w*h];
-	clock_t t; 
-	const unsigned K = 16;
-	const unsigned N = 8;
-	const unsigned M = K/N;
-	
-	printf("Alignment checks\n");
-	printf("  simd1f %llu\n", alignof(simd1f));
-	printf("  simd4f %llu\n", alignof(simd4f));
-	printf("  simd8f %llu\n", alignof(simd8f));
-	printf("  vec3f8 %llu\n", alignof(vec3f<8>));
-	
-	std::vector<Triangle> primitives = loadOBJFromFile(std::string("c:/users/greg/documents/bunny.obj"));
-	
-	t = clock(); 
-	Hierarchy hierarchy = Builder::build_hierarchy_grid_sse(primitives);
+	switch (args.traverser_type) {
+	case TraverserType::basic:
+		return trace(hierarchy, args.w, args.h, camera);
+	case TraverserType::packet:
+		switch (args.packet_width) {
+		case 1: return trace_packet<1>(hierarchy, args.w, args.h, camera);
+		case 2: return trace_packet<2>(hierarchy, args.w, args.h, camera);
+		case 4: return trace_packet<4>(hierarchy, args.w, args.h, camera);
+		case 8: return trace_packet<8>(hierarchy, args.w, args.h, camera);
+		case 16: return trace_packet<16>(hierarchy, args.w, args.h, camera);
+		default: assert(0 && "Error: Invalid packet width");
+		}
+	case TraverserType::bundle:
+		switch (args.bundle_width) {
+		case 16: return trace_bundle<16>(hierarchy, args.w, args.h, camera);
+		case 64: return trace_bundle<64>(hierarchy, args.w, args.h, camera);
+		default: assert(0 && "Error: Invalid bundle size");
+		}
+	default: assert(0 && "Error: Unknown traverser type");
+	}
+}
+
+void run(Arguments args)
+{
+	clock_t t;
+
+	// Load the scene
+	std::vector<Triangle> primitives = loadOBJFromFile(filename);
+
+	// Compute the bounding box
+	AABB1 scene_aabb = std::reduce(primitives.begin(), primitives.end(), AABB1(FLT_MAX, -FLT_MAX), 
+		[](const AABB1 &a, const AABB1 &b)->AABB1 { return a.combine(b); }
+	);
+
+	// Compute the camera position
+	vec3f1 centre = (scene_aabb.min + scene_aabb.max) * 0.5f;
+	vec3f1 camera = vec3f1(centre.x, centre.y, 2*scene_aabb.min.z - centre.z);
+
+	// Build the hierarchy
+	t = clock();
+	Hierarchy hierarchy = run_builder(args, primitives);
 	printf("Build time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
-	
+
+	// Count the nodes
 	t = clock(); 
 	printf("Nodes counted %d\n", count_nodes(hierarchy));
 	printf("Count time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
 
-	omp_set_num_threads(64);
-	
-	t = clock(); 
-	#pragma omp parallel for
-	for (unsigned j = 0; j < h; j+= tile_h) {
-		for (unsigned i = 0; i < w; i+= tile_w) {
-			RayBundle<K> bundle;
-			Ray<N> rays[M];
-			
-			bundle.dir_min = vec3f<1>(FLT_MAX, FLT_MAX, FLT_MAX);
-			bundle.dir_max = vec3f<1>(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-			
-			unsigned k = 0;
-			for (unsigned m = 0; m < M; m++)
-			for (unsigned n = 0; n < N; n++, k++) {
-
-				unsigned mx = morton_lut[k] % tile_w;
-				unsigned my = morton_lut[k] / tile_w;
-				
-				float x = (float)(i+mx)*0.25/w - 0.125f;
-				float y = (float)(j+my)*0.25/h;
-				
-				vec3f<1> origin(x, y, -1.0f);
-				vec3f<1> direction(0.0f, 0.0f, 1.0f);
-				
-				rays[m].origin[0][n] = origin.x;
-				rays[m].origin[1][n] = origin.y;
-				rays[m].origin[2][n] = origin.z;
-				rays[m].direction[0][n] = direction.x;
-				rays[m].direction[1][n] = direction.y;
-				rays[m].direction[2][n] = direction.z;
-				rays[m].tmin = simdf<N>::broadcast(0.0f);
-				rays[m].tmax = simdf<N>::broadcast(5.0f);
-				
-				bundle.ids[m] = m;
-				bundle.pos_min = min(bundle.pos_min, origin);
-				bundle.pos_max = max(bundle.pos_max, origin);
-				bundle.dir_min = min(bundle.dir_min, direction);
-				bundle.dir_max = max(bundle.dir_max, direction);
-			}
-			HitAttributes<N> attributes[M];
-			traverse_bundle(hierarchy, hierarchy.root_index, 1, bundle, rays, attributes);
-			
-			k = 0;
-			for (unsigned m = 0; m < M; m++)
-			for (unsigned n = 0; n < N; n++, k++) {
-				
-				unsigned mx = morton_lut[k] % tile_w;
-				unsigned my = morton_lut[k] / tile_w;
-				if (attributes[m].hit[n]) {
-					memset(&image_buffer[((j+my)*w+i+mx)*3], 128, 3);
-				} else {
-					memset(&image_buffer[((j+my)*w+i+mx)*3], 0, 3);
-				}
-			}
-		}
+	// Traverse the hierarchy
+	t = clock();
+	uint8_t* image = run_tracer(args, hierarchy, camera);
+	for (unsigned i = 0; i < 100; i++) {
+	image = run_tracer(args, hierarchy, camera);
 	}
 	printf("Traverse time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
 	
-	stbi_write_bmp("out.bmp", w, h, 3, image_buffer);
+	stbi_write_bmp("render.bmp", args.w, args.h, 3, image);
 
 	print_traverse_stats();
 }
 
 void benchmark()
 {
-	clock_t t[10];
+	clock_t t[16];
 	uint32_t i = 0;
 		
 	t[i++] = clock(); 	
 	std::vector<Triangle> primitives = loadOBJFromFile(filename);
+	AABB1 scene_aabb = std::reduce(primitives.begin(), primitives.end(), AABB1(FLT_MAX, -FLT_MAX), 
+		[](const AABB1 &a, const AABB1 &b)->AABB1 { return a.combine(b); }
+	);
+	vec3f1 centre = (scene_aabb.min + scene_aabb.max) * 0.5f;
     t[i++] = clock(); 
 
-	Builder::build_hierarchy(primitives);
+	Hierarchy hierarchy = Builder::build_hierarchy(primitives);
 	t[i++] = clock(); 
 	Builder::build_hierarchy_horizontal(primitives);
 	t[i++] = clock(); 
@@ -415,12 +336,21 @@ void benchmark()
 	Builder::build_hierarchy_grid_m128(primitives);
 	t[i++] = clock(); 
 	Builder::build_hierarchy_morton(primitives);
+	t[i++] = clock();
+
+	uint32_t w = 1920*2;
+	uint32_t h = 1080*2;
+	uint8_t* image1 = trace(hierarchy, w, h, vec3f1(centre.x, centre.y, 2*scene_aabb.min.z - centre.z));
+	t[i++] = clock(); 
+	uint8_t* image2 = trace_packet<8>(hierarchy, w, h, vec3f1(centre.x, centre.y, 2*scene_aabb.min.z - centre.z));
+	t[i++] = clock(); 
+	uint8_t* image3 = trace_bundle<64>(hierarchy, w, h, vec3f1(centre.x, centre.y, 2*scene_aabb.min.z - centre.z));
 	t[i++] = clock(); 
 	
-	printf("Load time: %f\n", (t[1] - t[0]) / (double) CLOCKS_PER_SEC);
+	printf("Load time: %.2fs\n", (t[1] - t[0]) / (double) CLOCKS_PER_SEC);
 	printf("\n");
-	printf("            recursive horizontal     grid   grid_sse  grid_avx   morton\n");
-	printf("build time:     % 3.0fms      % 3.0fms    % 3.0fms      % 3.0fms     % 3.0fms    % 3.0fms\n",
+	printf("             recursive horizontal       grid   grid_sse   grid_avx     morton\n");
+	printf("build time: % 8.0fms % 8.0fms % 8.0fms % 8.0fms % 8.0fms % 8.0fms\n",
 		1000.0f * (t[2] - t[1]) / (double) CLOCKS_PER_SEC,
 		1000.0f * (t[3] - t[2]) / (double) CLOCKS_PER_SEC,
 		1000.0f * (t[4] - t[3]) / (double) CLOCKS_PER_SEC,
@@ -428,6 +358,34 @@ void benchmark()
 		1000.0f * (t[6] - t[5]) / (double) CLOCKS_PER_SEC,
 		1000.0f * (t[7] - t[6]) / (double) CLOCKS_PER_SEC
 	);
+	printf("tri/s     : % 9.0fm % 9.0fm % 9.0fm % 9.0fm % 9.0fm % 9.0fm\n",
+		(float)primitives.size() / (1000000.0f * (t[2] - t[1]) / (double) CLOCKS_PER_SEC),
+		(float)primitives.size() / (1000000.0f * (t[3] - t[2]) / (double) CLOCKS_PER_SEC),
+		(float)primitives.size() / (1000000.0f * (t[4] - t[3]) / (double) CLOCKS_PER_SEC),
+		(float)primitives.size() / (1000000.0f * (t[5] - t[4]) / (double) CLOCKS_PER_SEC),
+		(float)primitives.size() / (1000000.0f * (t[6] - t[5]) / (double) CLOCKS_PER_SEC),
+		(float)primitives.size() / (1000000.0f * (t[7] - t[6]) / (double) CLOCKS_PER_SEC)
+	);
+	printf("\n");
+	printf("             basic packet bundle\n");
+	printf("trace time: % 4.0fms % 4.0fms % 4.0fms\n",
+		1000.0f * (t[8] - t[7]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[9] - t[8]) / (double) CLOCKS_PER_SEC,
+		1000.0f * (t[10] - t[9]) / (double) CLOCKS_PER_SEC
+	);
+	printf("mrps      : % 6.1f % 6.1f % 6.1f\n", 
+		(w*h/1000000.0f) / ((t[8] - t[7]) / (double) CLOCKS_PER_SEC),
+		(w*h/1000000.0f) / ((t[9] - t[8]) / (double) CLOCKS_PER_SEC),
+		(w*h/1000000.0f) / ((t[10] - t[9]) / (double) CLOCKS_PER_SEC)
+	);
+
+	stbi_write_bmp("benchmark1.bmp", w, h, 3, image1);
+	stbi_write_bmp("benchmark2.bmp", w, h, 3, image2);
+	stbi_write_bmp("benchmark3.bmp", w, h, 3, image3);
+
+	delete[] image1;
+	delete[] image2;
+	delete[] image3;
 }
 
 void usage()
@@ -447,6 +405,7 @@ void usage()
 	printf("                packet <n>     : A packet traverser of n rays\n");
 	printf("                bundle <n>     : A bundle traverser of n rays\n");
 	printf("            -threads <n>    : Maximum number of threads\n");
+	printf("            -res <x> <y>    : Set the output resolution\n");
 	printf("            -benchmark      : run a benchmark mode testing all builders and traversers\n");
 }
 
@@ -456,9 +415,12 @@ Arguments parse_arguments(int argc, char** argv)
 	args.builder_type = BuilderType::recursive;
 	args.traverser_type = TraverserType::basic;
 	args.packet_width = 8;
+	args.w = 1920;
+	args.h = 1080;
 
 	if (argc < 2) {
 		printf("Error: not enough arguments\n");
+		usage();
 		exit(0);
 	}
 	filename = argv[1];
@@ -519,6 +481,12 @@ Arguments parse_arguments(int argc, char** argv)
 			assert(++i < argc);
 			kNumThreads = atoi(argv[i]);
 		}
+		else if (std::string(argv[i]).compare("-res") == 0) {
+			assert(++i < argc);
+			args.w = atoi(argv[i]);
+			assert(++i < argc);
+			args.h = atoi(argv[i]);
+		}
 		else if (std::string(argv[i]).compare("-benchmark") == 0) {
 			benchmark_mode = true;
 		}
@@ -530,16 +498,15 @@ Arguments parse_arguments(int argc, char** argv)
 	
 int main(int argc, char** argv)
 {
-	Arguments agrs = parse_arguments(argc, argv);
+	Arguments args = parse_arguments(argc, argv);
+
+	omp_set_num_threads(kNumThreads);
 
 	if (benchmark_mode) {
 		benchmark();
 		exit(0);
 	}
 
-	omp_set_num_threads(64);
-	
-	rt_test();
-	bundle_test();
+	run(args);
 	exit(0);
 }

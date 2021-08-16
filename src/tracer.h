@@ -10,7 +10,7 @@
 void print_traverse_stats();
 
 template <size_t K>
-static simdi<K> intersect_ray_aabb(Node1 &aabb, Ray<K> &ray, HitAttributes<K> &attributes) {
+static int intersect_ray_aabb(Node1 &aabb, Ray<K> &ray, HitAttributes<K> &attributes) {
 	
 	vec3f<K> inv_dir = rcp(ray.direction);
 	vec3f<K> t1, t2;
@@ -28,11 +28,12 @@ static simdi<K> intersect_ray_aabb(Node1 &aabb, Ray<K> &ray, HitAttributes<K> &a
 	
 	simdf<K> front = hmax(tmin);
 	simdf<K> back  = hmin(tmax);
-	
-	return simdi<K>((back >= front) & (back <= ray.tmax));
+
+	return movemask(simdi<K>((back >= front) & (back <= ray.tmax)));
 }
 
 // Assumes bundle shares an origin
+// Todo: SIMD this
 template <size_t K>
 static bool intersect_bundle_aabb(RayBundle<K> &bundle, Node1 &aabb) {
 	
@@ -99,5 +100,13 @@ void traverse_packet_stack(Hierarchy &hierarchy, uint32_t index, uint32_t count,
 
 template<size_t K, size_t N>
 void traverse_bundle(Hierarchy &hierarchy, uint32_t index, uint32_t count, RayBundle<K> &bundle, Ray<N> *bundle_rays, HitAttributes<N> *attributes);
+
+uint8_t* trace(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin);
+
+template<size_t K>
+uint8_t* trace_packet(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin);
+
+template<size_t K>
+uint8_t* trace_bundle(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin);
 
 #endif

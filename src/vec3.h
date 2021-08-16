@@ -159,7 +159,7 @@ struct vec3f1 {
 	__forceinline const vec3f1 cross(const vec3f1 &other) { return vec3f1(y*other.z - other.y*z, z*other.x - other.z*x, x*other.y - other.x*y); }
 };
 
- __forceinline int operator ==(const vec3f1& a, const vec3f1& b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
+__forceinline int operator ==(const vec3f1& a, const vec3f1& b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
 
 __forceinline vec3f1 operator +(const vec3f1& a, const vec3f1& b) { return vec3f1(a.x + b.x, a.y + b.y, a.z + b.z); }
 __forceinline vec3f1 operator -(const vec3f1& a, const vec3f1& b) { return vec3f1(a.x - b.x, a.y - b.y, a.z - b.z); }
