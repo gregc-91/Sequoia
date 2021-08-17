@@ -17,6 +17,7 @@
 
 #include <omp.h>
 
+#include <intrin.h>
 #include <immintrin.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -53,6 +54,26 @@ struct Arguments {
 	uint32_t w;
 	uint32_t h;
 };
+
+std::string GetProcessorName()
+{
+	char CPUBrandString[0x40] = {0};
+	int CPUInfo[4] = {-1};
+	__cpuid(CPUInfo, 0x80000000);
+
+	unsigned nExIds = CPUInfo[0];
+	for (unsigned i=0x80000000; i<=nExIds; ++i)
+	{
+		__cpuid(CPUInfo, i);
+		if  (i == 0x80000002)
+			memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
+		else if  (i == 0x80000003)
+			memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
+		else if  (i == 0x80000004)
+			memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
+	}
+	return std::string(CPUBrandString);
+}
 
 //
 // Faster than builtin strtok but maybe less robust
@@ -496,6 +517,9 @@ int main(int argc, char** argv)
 	Arguments args = parse_arguments(argc, argv);
 
 	omp_set_num_threads(kNumThreads);
+
+	printf("Running on %s\n", GetProcessorName().c_str());
+	printf("  with %d threads\n\n", kNumThreads);
 
 	if (benchmark_mode) {
 		benchmark();
