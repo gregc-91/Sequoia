@@ -302,9 +302,6 @@ void run(Arguments args)
 	// Traverse the hierarchy
 	t = clock();
 	uint8_t* image = run_tracer(args, hierarchy, camera);
-	for (unsigned i = 0; i < 100; i++) {
-	image = run_tracer(args, hierarchy, camera);
-	}
 	printf("Traverse time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
 	
 	stbi_write_bmp("render.bmp", args.w, args.h, 3, image);
