@@ -292,21 +292,19 @@ void run(Arguments args)
 	// Build the hierarchy
 	t = clock();
 	Hierarchy hierarchy = run_builder(args, primitives);
-	printf("Build time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
+	printf("Build time:    %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
 
 	// Count the nodes
 	t = clock(); 
-	printf("Nodes counted %d\n", count_nodes(hierarchy));
-	printf("Count time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
+	printf("Nodes counted  %d\n", count_nodes(hierarchy));
+	printf("Count time:    %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
 
 	// Traverse the hierarchy
 	t = clock();
 	uint8_t* image = run_tracer(args, hierarchy, camera);
-	printf("Traverse time: %f\n", ((double)clock() - t)/CLOCKS_PER_SEC);
+	printf("Traverse time: %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
 	
 	stbi_write_bmp("render.bmp", args.w, args.h, 3, image);
-
-	print_traverse_stats();
 }
 
 void benchmark()
