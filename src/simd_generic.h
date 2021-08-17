@@ -12,7 +12,7 @@
 
 #ifndef _MSC_VER
 #ifndef __forceinline
-	#define __forceinline __attribute__((always_inline))
+	#define __forceinline __attribute__((always_inline)) inline
 #endif
 #endif
 

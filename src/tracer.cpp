@@ -266,8 +266,6 @@ template
 uint8_t* trace_packet<4>(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin);
 template
 uint8_t* trace_packet<8>(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin);
-template
-uint8_t* trace_packet<16>(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin);
 
 template<size_t K>
 uint8_t* trace_bundle(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin)

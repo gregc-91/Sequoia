@@ -17,7 +17,10 @@
 
 #include <omp.h>
 
+#ifdef _WIN32
 #include <intrin.h>
+#endif
+
 #include <immintrin.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -57,6 +60,7 @@ struct Arguments {
 
 std::string GetProcessorName()
 {
+#ifdef _WIN32
 	char CPUBrandString[0x40] = {0};
 	int CPUInfo[4] = {-1};
 	__cpuid(CPUInfo, 0x80000000);
@@ -73,6 +77,8 @@ std::string GetProcessorName()
 			memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
 	}
 	return std::string(CPUBrandString);
+#endif
+	return "Unknown";
 }
 
 //
@@ -281,7 +287,6 @@ uint8_t* run_tracer(Arguments args, Hierarchy &hierarchy, vec3f1 camera)
 		case 2: return trace_packet<2>(hierarchy, args.w, args.h, camera);
 		case 4: return trace_packet<4>(hierarchy, args.w, args.h, camera);
 		case 8: return trace_packet<8>(hierarchy, args.w, args.h, camera);
-		case 16: return trace_packet<16>(hierarchy, args.w, args.h, camera);
 		default: assert(0 && "Error: Invalid packet width");
 		}
 	case TraverserType::bundle:

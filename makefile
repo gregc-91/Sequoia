@@ -4,8 +4,12 @@ EXE    = raytracer
 SRC    = src
 BIN    = bin
 CC     = g++
-CFLAGS = -std=c++17 -march=native -fopenmp -O3 -Wall -g3 -gdwarf-2 -Wno-ignored-attributes -static
 SHELL  = /bin/bash
+CFLAGS = -std=c++17 -march=native -fopenmp -O3 -Wall -g3 -gdwarf-2 -Wno-ignored-attributes
+ifeq ($(OS), Windows_NT)
+	CFLAGS += -static
+endif
+
 
 # Shell colours
 BLACK =\u001b[30;1m
