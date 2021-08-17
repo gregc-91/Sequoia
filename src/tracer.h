@@ -32,26 +32,46 @@ static int intersect_ray_aabb(Node1 &aabb, Ray<K> &ray, HitAttributes<K> &attrib
 	return movemask(simdi<K>((back >= front) & (back <= ray.tmax)));
 }
 
-// Assumes bundle shares an origin
-// Todo: SIMD this
+// Assumes the bundle shares an origin
 template <size_t K>
-static bool intersect_bundle_aabb(RayBundle<K> &bundle, Node1 &aabb) {
+static bool intersect_bundle_aabb(RayBundle<K> &bundle, Node1 &aabb, bool &any_hit, bool &mid_hit, bool& all_hit) {
 	
-	vec3f1 inv_min_dir = rcp(bundle.dir_min);
-	vec3f1 inv_max_dir = rcp(bundle.dir_max);
+	simdf<4> dir_min = simdf<4>::loadu(&bundle.dir_min.x);
+	simdf<4> dir_max = simdf<4>::loadu(&bundle.dir_max.x);
+	simdf<4> inv_min_dir = rcp(dir_min);
+	simdf<4> inv_max_dir = rcp(dir_max);
+	simdf<4> inv_mid_dir = rcp((dir_min + dir_max) * simdf<4>::broadcast(0.5f));
+	simdf<4> aabb_min = simdf<4>::loadu(&aabb.min.x);
+	simdf<4> aabb_max = simdf<4>::loadu(&aabb.max.x);
+	simdf<4> pos = simdf<4>::loadu(&bundle.pos_min.x);
+	simdf<4> t1a = (aabb_min - pos) * inv_min_dir;
+	simdf<4> t1b = (aabb_min - pos) * inv_max_dir;
+	simdf<4> t2a = (aabb_max - pos) * inv_min_dir;
+	simdf<4> t2b = (aabb_max - pos) * inv_max_dir;
+	simdf<4> t1 = (aabb_min - pos) * inv_mid_dir;
+	simdf<4> t2 = (aabb_max - pos) * inv_mid_dir;
+	simdf<4> t1min = min(t1a, t1b);
+	simdf<4> t1max = max(t1a, t1b);
+	simdf<4> t2min = min(t2a, t2b);
+	simdf<4> t2max = max(t2a, t2b);
+	simdf<4> tmin_mid = min(t1, t2);
+	simdf<4> tmin_any = min(t1min, t2min);
+	simdf<4> tmin_all = min(t1max, t2max);
+	simdf<4> tmax_mid = max(t1, t2);
+	simdf<4> tmax_any = max(t1max, t2max);
+	simdf<4> tmax_all = max(t1min, t2min);
 
-	vec3f1 t1a = (aabb.min - bundle.pos_min) * inv_min_dir;
-	vec3f1 t1b = (aabb.min - bundle.pos_min) * inv_max_dir;
-	vec3f1 t2a = (aabb.max - bundle.pos_min) * inv_min_dir;
-	vec3f1 t2b = (aabb.max - bundle.pos_min) * inv_max_dir;
+	float front_mid = std::max(std::max(tmin_mid[0], tmin_mid[1]), tmin_mid[2]);
+	float front_any = std::max(std::max(tmin_any[0], tmin_any[1]), tmin_any[2]);
+	float front_all = std::max(std::max(tmin_all[0], tmin_all[1]), tmin_all[2]);
+	float back_mid = std::min(std::min(tmax_mid[0], tmax_mid[1]), tmax_mid[2]);
+	float back_any = std::min(std::min(tmax_any[0], tmax_any[1]), tmax_any[2]);
+	float back_all = std::min(std::min(tmax_all[0], tmax_all[1]), tmax_all[2]);
 
-	vec3f1 tmin = min(max(t1a, t1b), max(t2a, t2b));
-	vec3f1 tmax = max(min(t1a, t1b), min(t2a, t2b));
-
-	float front = hmax(tmin);
-	float back  = hmin(tmax);
-
-	return back >= front;
+	mid_hit = back_mid >= front_mid;
+	all_hit = back_all >= front_all;
+	any_hit = back_any >= front_any;
+	return any_hit;
 }
 
 template <size_t K>

@@ -108,10 +108,11 @@ void traverse_bundle(Hierarchy &hierarchy, uint32_t index, uint32_t count, RayBu
 	for (unsigned i = 0; i < count; i++) {
 		Node1 &node = hierarchy.node_base[index+i];
 
-		bool all_hit = intersect_bundle_aabb(bundle, node);
+		bool any_hit, all_hit, mid_hit;
+		intersect_bundle_aabb(bundle, node, any_hit, mid_hit, all_hit);
 		bool is_leaf =!! (node.flags & AABB_FLAGS_LEAF);
 		
-		if (all_hit) {
+		if (mid_hit) {
 			if (is_leaf) {
 				// Intersect all the triangles individually
 				for (unsigned k = 0; k < K/N; k++) {
@@ -123,7 +124,7 @@ void traverse_bundle(Hierarchy &hierarchy, uint32_t index, uint32_t count, RayBu
 				// Carry on traversing as a bundle
 				traverse_bundle(hierarchy, node.child, node.count, bundle, rays, attributes);
 			}
-		} else {
+		} else if (any_hit) {
 			// Break the bundle up and traverse individual rays
 			for (unsigned k = 0; k < K/N; k++) {
 				traverse_packet_stack(hierarchy, index+i, 1, rays[k], attributes[k]);
