@@ -7,16 +7,10 @@ using namespace vec;
 
 template <size_t K>
 struct Ray {
-	
 	vec3f<K> origin;
 	simdf<K> tmin;
 	vec3f<K> direction;
 	simdf<K> tmax;
-	
-	// Constructors and assignment operators
-	//__forceinline Ray<K>() {}
-    //__forceinline Ray<K>(const Ray<K>& a) : origin(a.origin), tmin(a.tmin), direction(a.direction), tmax(a.tmax) {}
-    //__forceinline Ray<K>(vec3f<K> origin, simdf<K> tmin, vec3f<K> direction, simdf<K> tmax) : origin(origin), tmin(tmin), direction(direction), tmax(tmax) {}
 };
 
 template <size_t K>

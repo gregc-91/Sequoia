@@ -175,8 +175,8 @@ uint8_t* trace(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin)
 	uint8_t* image_buffer = new uint8_t[w*h*3];
 
 	#pragma omp parallel for
-	for (int j = 0; j < h; j++) {
-		for (int i = 0; i < w; i++) {
+	for (uint32_t j = 0; j < h; j++) {
+		for (uint32_t i = 0; i < w; i++) {
 			Ray<1> ray;
 			ray.origin[0][0] = origin.x;
 			ray.origin[1][0] = origin.y;

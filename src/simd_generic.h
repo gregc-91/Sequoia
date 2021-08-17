@@ -205,6 +205,7 @@ template<size_t K, typename T> __forceinline bool any(const simd<K, T> &a) {
 	return memcmp(&a.v, &zero.v, sizeof(a)) != 0;
 }
 
+// Can't get the compiler to generate these without builtins so use constexpr
 template<size_t K, typename T> __forceinline unsigned movemask(const simd<K, T> &a) {
 	     if constexpr (sizeof(T) == 1 && K ==   8) return __builtin_ia32_pmovmskb(simd<K, char>(a));
 	else if constexpr (sizeof(T) == 1 && K ==  16) return __builtin_ia32_pmovmskb128(simd<K, char>(a).v);
