@@ -10,7 +10,6 @@ ifeq ($(OS), Windows_NT)
 	CFLAGS += -static
 endif
 
-
 # Shell colours
 BLACK =\u001b[30;1m
 RED   =\u001b[31;1m
