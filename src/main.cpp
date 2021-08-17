@@ -330,6 +330,7 @@ void run(Arguments args)
 	uint8_t* image = run_tracer(args, hierarchy, camera);
 	printf("Traverse time: %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
 	
+	stbi_flip_vertically_on_write(true);
 	stbi_write_bmp("render.bmp", args.w, args.h, 3, image);
 }
 
@@ -400,6 +401,7 @@ void benchmark()
 		(w*h/1000000.0f) / ((t[10] - t[9]) / (double) CLOCKS_PER_SEC)
 	);
 
+	stbi_flip_vertically_on_write(true);
 	stbi_write_bmp("benchmark1.bmp", w, h, 3, image1);
 	stbi_write_bmp("benchmark2.bmp", w, h, 3, image2);
 	stbi_write_bmp("benchmark3.bmp", w, h, 3, image3);
