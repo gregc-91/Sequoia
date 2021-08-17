@@ -184,6 +184,7 @@ uint8_t* trace(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin)
 
 			vec3f1 coord = vec3f1((float)i, (float)j, 1);
 			vec3f1 ndc = 2 * ((coord + 0.5f) / vec3f1(w, h, 1)) - 1;
+			ndc.x *= (float)w/h;
 			vec3f1 p = (ndc.x * vec3f1(1, 0, 0)) + (ndc.y * vec3f1(0, 1, 0)) + (1.0f * vec3f1(0, 0, 1));
 			ray.direction[0][0] = p.x / p.length();
 			ray.direction[1][0] = p.y / p.length();
@@ -226,6 +227,7 @@ uint8_t* trace_packet(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origi
 
 					vec3f1 coord = vec3f1((float)i + mx, (float)j + my, 1);
 					vec3f1 ndc = 2 * ((coord + 0.5f) / vec3f1(w, h, 1)) - 1;
+					ndc.x *= (float)w/h;
 					vec3f1 p = (ndc.x * vec3f1(1, 0, 0)) + (ndc.y * vec3f1(0, 1, 0)) + (1.0f * vec3f1(0, 0, 1));
 					ray.direction[0][m] = p.x / p.length();
 					ray.direction[1][m] = p.y / p.length();
@@ -300,6 +302,7 @@ uint8_t* trace_bundle(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origi
 
 				vec3f1 coord = vec3f1((float)i + mx, (float)j + my, 1);
 				vec3f1 ndc = 2 * ((coord + 0.5f) / vec3f1(w, h, 1)) - 1;
+				ndc.x *= (float)w/h;
 				vec3f1 p = (ndc.x * vec3f1(1, 0, 0)) + (ndc.y * vec3f1(0, 1, 0)) + (1.0f * vec3f1(0, 0, 1));
 				rays[m].direction[0][n] = p.x / p.length();
 				rays[m].direction[1][n] = p.y / p.length();
