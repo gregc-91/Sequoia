@@ -2531,8 +2531,6 @@ Hierarchy Builder::build_hierarchy_morton2(std::vector<Triangle> &primitives)
 		}
 	}
 	
-	printf("Recurse done\n");
-	
 	Node1 &root = nodes[0];
 	root.child = 1;
 	root.count = count;
