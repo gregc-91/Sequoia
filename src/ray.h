@@ -25,5 +25,6 @@ struct RayBundle {
 template <size_t K>
 struct HitAttributes {
 	simdi<K> hit;
-	HitAttributes() : hit(simdi<K>::broadcast(0)) {}
+	simdi<K> num_tests;
+	HitAttributes() : hit(simdi<K>::broadcast(0)), num_tests(simdi<K>::broadcast(0)) {}
 };

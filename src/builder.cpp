@@ -24,7 +24,7 @@ uint8_t demorton[64] = {
 	0x28, 0x29, 0x2C, 0x2D, 0x38, 0x39, 0x3C, 0x3D, 0x2A, 0x2B, 0x2E, 0x2F, 0x3A, 0x3B, 0x3E, 0x3F
 };
 
-uint32_t Compact1By2(uint32_t x)
+uint32_t compact_1_by_2(uint32_t x)
 {
 	x &= 0x09249249;                  // x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
 	x = (x ^ (x >>  2)) & 0x030c30c3; // x = ---- --98 ---- 76-- --54 ---- 32-- --10
@@ -1723,9 +1723,9 @@ void bin_centroids_to_grid(const std::vector<AABB1>   &aabbs,
 	unsigned prefix_sum = 0;
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		thread_begin[i] = prefix_sum;
 		
@@ -1735,9 +1735,9 @@ void bin_centroids_to_grid(const std::vector<AABB1>   &aabbs,
 	#pragma omp parallel for shared(grid, triangles)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		assert(kx < GRID_DIM);
 		assert(ky < GRID_DIM);
@@ -1813,9 +1813,9 @@ void bin_centroids_to_grid_sse(const std::vector<AABBh>   &aabbs,
 	unsigned prefix_sum = 0;
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		thread_begin[i] = prefix_sum;
 		
@@ -1825,9 +1825,9 @@ void bin_centroids_to_grid_sse(const std::vector<AABBh>   &aabbs,
 	#pragma omp parallel for shared(grid, triangles)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		unsigned thread_sum = 0;
 		for (unsigned t = 0; t < NUM_THREADS; t++)
@@ -1886,9 +1886,9 @@ void bin_centroids_to_grid_sse_reduction(const std::vector<AABBh>   &aabbs,
 	unsigned prefix_sum = 0;
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		thread_begin[i] = prefix_sum;
 		prefix_sum += bins[kz][ky][kx].count;
@@ -1897,9 +1897,9 @@ void bin_centroids_to_grid_sse_reduction(const std::vector<AABBh>   &aabbs,
 	#pragma omp parallel for shared(grid, triangles)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		std::copy(grid[kz][ky][kx].begin(), grid[kz][ky][kx].end(), triangles.begin() + thread_begin[i]);
 	}
@@ -1966,9 +1966,9 @@ void bin_centroids_to_grid_m128(const std::vector<AABBm>     &aabbs,
 	unsigned prefix_sum = 0;
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		thread_begin[i] = prefix_sum;
 		prefix_sum += bins[kz][ky][kx].count;
@@ -1977,9 +1977,9 @@ void bin_centroids_to_grid_m128(const std::vector<AABBm>     &aabbs,
 	#pragma omp parallel for shared(grid, triangles)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		unsigned thread_sum = 0;
 		for (unsigned t = 0; t < NUM_THREADS; t++)
@@ -2019,9 +2019,9 @@ Hierarchy Builder::build_hierarchy_grid_sse(std::vector<Triangle> &primitives)
 	#pragma omp parallel for shared(aabbs, centres, triangleIds)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		unsigned thread_count = thread_begin[i+1] - thread_begin[i];
 		std::vector<unsigned> scratch1(thread_count);
@@ -2089,9 +2089,9 @@ Hierarchy Builder::build_hierarchy_grid_m128(std::vector<Triangle> &primitives)
 	#pragma omp parallel for shared(aabbs, centres, triangleIds)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		unsigned thread_count = thread_begin[i+1] - thread_begin[i];
 		std::vector<unsigned> scratch1(thread_count);
@@ -2158,9 +2158,9 @@ Hierarchy Builder::build_hierarchy_grid(std::vector<Triangle> &primitives)
 	#pragma omp parallel for shared(aabbs, centres, triangleIds)
 	for (unsigned i = 0; i < NUM_CELLS; i++)
 	{
-		unsigned kx = Compact1By2(i>>0);
-		unsigned ky = Compact1By2(i>>1);
-		unsigned kz = Compact1By2(i>>2);
+		unsigned kx = compact_1_by_2(i>>0);
+		unsigned ky = compact_1_by_2(i>>1);
+		unsigned kz = compact_1_by_2(i>>2);
 		
 		std::pair<unsigned, unsigned> child = recurse(aabbs, centres, bins, 
 			triangleIds.begin() + thread_begin[i], 
@@ -2232,7 +2232,7 @@ void setup_morton(std::vector<Triangle> &primitives, std::vector<RadixInput32> &
 		assert(y <= 0x3FF);
 		assert(z <= 0x3FF);
 		
-		morton_codes[i].code = bitInterleave32(x, y, z);
+		morton_codes[i].code = bit_interleave_32(x, y, z);
 	}
 }
 
@@ -2274,7 +2274,7 @@ void setup_morton2(std::vector<Triangle> &primitives, std::vector<RadixInput64> 
 		assert(y <= 0xFFFFF);
 		assert(z <= 0xFFFFF);
 		
-		morton_codes[i].code = bitInterleave64(x, y, z);
+		morton_codes[i].code = bit_interleave_64(x, y, z);
 	}
 }
 
@@ -2483,7 +2483,7 @@ Hierarchy Builder::build_hierarchy_morton(std::vector<Triangle> &primitives)
 	setup_morton(primitives, morton_codes, scene_aabb);
 	
 	// Sort indices by morton code
-	radixSort<uint32_t, RadixInput32>(morton_codes.begin(), morton_codes.end(), scratch.begin(), scratch.end(), 8);
+	radix_sort<uint32_t, RadixInput32>(morton_codes.begin(), morton_codes.end(), scratch.begin(), scratch.end(), 8);
 
 	// Morton recurse
 	unsigned count;
@@ -2519,7 +2519,7 @@ Hierarchy Builder::build_hierarchy_morton2(std::vector<Triangle> &primitives)
 	setup_morton2(primitives, morton_codes, scene_aabb);
 	
 	// Sort indices by morton code
-	radixSort<uint64_t, RadixInput64>(morton_codes.begin(), morton_codes.end(), scratch.begin(), scratch.end(), 8);
+	radix_sort<uint64_t, RadixInput64>(morton_codes.begin(), morton_codes.end(), scratch.begin(), scratch.end(), 8);
 
 	// Morton recurse
 	unsigned count;

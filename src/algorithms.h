@@ -9,7 +9,7 @@
 #include <immintrin.h>
 
 template <typename Key, typename T>
-static void countingSort(
+static void counting_sort(
 	typename std::vector<T>::iterator begin,
 	typename std::vector<T>::iterator end,
 	typename std::vector<T>::iterator output,
@@ -39,7 +39,7 @@ static void countingSort(
 }
 
 template <typename Key, typename T>
-static void parallelCountingSort(
+static void parallel_counting_sort(
 	typename std::vector<T>::iterator begin,
 	typename std::vector<T>::iterator end,
 	typename std::vector<T>::iterator output,
@@ -87,7 +87,7 @@ static void parallelCountingSort(
 }
 
 template <typename Key, typename T>
-static void radixSort(
+static void radix_sort(
 	typename std::vector<T>::iterator begin,
 	typename std::vector<T>::iterator end,
 	typename std::vector<T>::iterator scratch,
@@ -95,24 +95,24 @@ static void radixSort(
 	unsigned b)
 {
 	if (sizeof(Key) == sizeof(uint32_t)) {
-		parallelCountingSort<Key, T>(begin, end, scratch, scratch_end, b, 0);
-		parallelCountingSort<Key, T>(scratch, scratch_end, begin, end, b, 1);
-		parallelCountingSort<Key, T>(begin, end, scratch, scratch_end, b, 2);
-		parallelCountingSort<Key, T>(scratch, scratch_end, begin, end, b, 3);
+		parallel_counting_sort<Key, T>(begin, end, scratch, scratch_end, b, 0);
+		parallel_counting_sort<Key, T>(scratch, scratch_end, begin, end, b, 1);
+		parallel_counting_sort<Key, T>(begin, end, scratch, scratch_end, b, 2);
+		parallel_counting_sort<Key, T>(scratch, scratch_end, begin, end, b, 3);
 	}
 	else if (sizeof(Key) == sizeof(uint64_t)) {
-		parallelCountingSort<Key, T>(begin, end, scratch, scratch_end, b, 0);
-		parallelCountingSort<Key, T>(scratch, scratch_end, begin, end, b, 1);
-		parallelCountingSort<Key, T>(begin, end, scratch, scratch_end, b, 2);
-		parallelCountingSort<Key, T>(scratch, scratch_end, begin, end, b, 3);			
-		parallelCountingSort<Key, T>(begin, end, scratch, scratch_end, b, 4);
-		parallelCountingSort<Key, T>(scratch, scratch_end, begin, end, b, 5);
-		parallelCountingSort<Key, T>(begin, end, scratch, scratch_end, b, 6);
-		parallelCountingSort<Key, T>(scratch, scratch_end, begin, end, b, 7);		
+		parallel_counting_sort<Key, T>(begin, end, scratch, scratch_end, b, 0);
+		parallel_counting_sort<Key, T>(scratch, scratch_end, begin, end, b, 1);
+		parallel_counting_sort<Key, T>(begin, end, scratch, scratch_end, b, 2);
+		parallel_counting_sort<Key, T>(scratch, scratch_end, begin, end, b, 3);			
+		parallel_counting_sort<Key, T>(begin, end, scratch, scratch_end, b, 4);
+		parallel_counting_sort<Key, T>(scratch, scratch_end, begin, end, b, 5);
+		parallel_counting_sort<Key, T>(begin, end, scratch, scratch_end, b, 6);
+		parallel_counting_sort<Key, T>(scratch, scratch_end, begin, end, b, 7);		
 	}
 }
 	
-uint32_t bitInterleave32(const uint32_t &x, const uint32_t &y, const uint32_t &z);
-uint64_t bitInterleave64(const uint64_t &x, const uint64_t &y, const uint64_t &z);
+uint32_t bit_interleave_32(const uint32_t &x, const uint32_t &y, const uint32_t &z);
+uint64_t bit_interleave_64(const uint64_t &x, const uint64_t &y, const uint64_t &z);
 	
 #endif

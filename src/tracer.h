@@ -29,12 +29,14 @@ static int intersect_ray_aabb(Node1 &aabb, Ray<K> &ray, HitAttributes<K> &attrib
 	simdf<K> front = hmax(tmin);
 	simdf<K> back  = hmin(tmax);
 
+	attributes.num_tests[0]++;
+
 	return movemask(simdi<K>((back >= front) & (back <= ray.tmax)));
 }
 
 // Assumes the bundle shares an origin
-template <size_t K>
-static bool intersect_bundle_aabb(RayBundle<K> &bundle, Node1 &aabb, bool &any_hit, bool &mid_hit, bool& all_hit) {
+template <size_t K, size_t N>
+static bool intersect_bundle_aabb(RayBundle<K> &bundle, HitAttributes<N> *attributes, Node1 &aabb, bool &any_hit, bool &mid_hit, bool& all_hit) {
 	
 	simdf<4> dir_min = simdf<4>::loadu(&bundle.dir_min.x);
 	simdf<4> dir_max = simdf<4>::loadu(&bundle.dir_max.x);
@@ -71,6 +73,9 @@ static bool intersect_bundle_aabb(RayBundle<K> &bundle, Node1 &aabb, bool &any_h
 	mid_hit = back_mid >= front_mid;
 	all_hit = back_all >= front_all;
 	any_hit = back_any >= front_any;
+
+	attributes[0].num_tests[1]++;
+
 	return any_hit;
 }
 

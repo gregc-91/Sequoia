@@ -58,7 +58,7 @@ struct Arguments {
 	uint32_t h;
 };
 
-std::string GetProcessorName()
+std::string get_processor_name()
 {
 #ifdef _WIN32
 	char CPUBrandString[0x40] = {0};
@@ -215,7 +215,7 @@ void sort_test()
 	clock_t t, t2; 
 	
 	t = clock(); 
-	radixSort<unsigned, RadixInput>(input.begin(), input.end(), scratch.begin(), scratch.end(), (unsigned)8);
+	radix_sort<unsigned, RadixInput>(input.begin(), input.end(), scratch.begin(), scratch.end(), (unsigned)8);
 	t = clock() - t;
 	double time_taken = ((double)t)/CLOCKS_PER_SEC;
 	
@@ -225,7 +225,7 @@ void sort_test()
 	double time_taken2 = ((double)t2)/CLOCKS_PER_SEC;
 	
 	t = clock(); 
-	radixSort<uint64_t, RadixInput64>(input2.begin(), input2.end(), scratch2.begin(), scratch2.end(), (unsigned)8);
+	radix_sort<uint64_t, RadixInput64>(input2.begin(), input2.end(), scratch2.begin(), scratch2.end(), (unsigned)8);
 	t = clock() - t;
 	double time_taken3 = ((double)t)/CLOCKS_PER_SEC;
 	
@@ -304,7 +304,9 @@ void run(Arguments args)
 	clock_t t;
 
 	// Load the scene
+	t = clock();
 	std::vector<Triangle> primitives = loadOBJFromFile(filename);
+	printf("Load time:     %.0fms\n", 1000.0f*((double)clock() - t) / CLOCKS_PER_SEC);
 
 	// Compute the bounding box
 	AABB1 scene_aabb = std::reduce(primitives.begin(), primitives.end(), AABB1(FLT_MAX, -FLT_MAX), 
@@ -321,9 +323,9 @@ void run(Arguments args)
 	printf("Build time:    %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
 
 	// Count the nodes
-	t = clock(); 
-	printf("Nodes counted  %d\n", count_nodes(hierarchy));
-	printf("Count time:    %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
+	//t = clock(); 
+	//printf("Nodes counted  %d\n", count_nodes(hierarchy));
+	//printf("Count time:    %.0fms\n", 1000.0f*((double)clock() - t)/CLOCKS_PER_SEC);
 
 	// Traverse the hierarchy
 	t = clock();
@@ -525,7 +527,7 @@ int main(int argc, char** argv)
 
 	omp_set_num_threads(kNumThreads);
 
-	printf("Running on %s\n", GetProcessorName().c_str());
+	printf("Running on %s\n", get_processor_name().c_str());
 	printf("  with %d threads\n\n", kNumThreads);
 
 	if (benchmark_mode) {

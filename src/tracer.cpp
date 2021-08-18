@@ -22,6 +22,28 @@ static uint32_t morton_lut[64] = {
 	0x30,0x31,0x34,0x35,0x32,0x33,0x36,0x37,0x38,0x39,0x3C,0x3D,0x3A,0x3B,0x3E,0x3F
 };
 
+vec3f1 get_heatmap_colour(float normalised)
+{
+	const uint32_t num_colours = 6;
+	vec3f1 colours[6] = {
+		vec3f1(0,0,0),
+		vec3f1(0,0,1),
+		vec3f1(0,1,1),
+		vec3f1(0,1,0),
+		vec3f1(1,1,0),
+		vec3f1(1,0,0)
+	};
+
+	if (normalised <= 0.0f) return colours[0];
+	if (normalised >= 1.0f) return colours[num_colours-1];
+
+	int i0 = floor(normalised * (num_colours-1));
+	int i2 = ceil(normalised * (num_colours-1));
+	float fract = i2 - normalised * (num_colours-1);
+
+	return colours[i0]*fract + colours[i2]*(1.0f-fract);
+}
+
 void traverse(Hierarchy &hierarchy, uint32_t index, uint32_t count, Ray<1> &ray, HitAttributes<1> &attributes)
 {
 	for (unsigned i = 0; i < count; i++) {
@@ -109,7 +131,7 @@ void traverse_bundle(Hierarchy &hierarchy, uint32_t index, uint32_t count, RayBu
 		Node1 &node = hierarchy.node_base[index+i];
 
 		bool any_hit, all_hit, mid_hit;
-		intersect_bundle_aabb(bundle, node, any_hit, mid_hit, all_hit);
+		intersect_bundle_aabb(bundle, attributes, node, any_hit, mid_hit, all_hit);
 		bool is_leaf =!! (node.flags & AABB_FLAGS_LEAF);
 		
 		if (mid_hit) {
@@ -196,11 +218,11 @@ uint8_t* trace(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origin)
 			HitAttributes<1> attributes;
 			
 			traverse(hierarchy, hierarchy.root_index, 1, ray, attributes);
-			if (attributes.hit[0]) {
-				memset(&image_buffer[(j*w+i)*3], 128, 3);
-			} else {
-				memset(&image_buffer[(j*w+i)*3], 0, 3);
-			}
+
+			vec3f1 colour(std::min(1.0f, attributes.num_tests[0] / 200.0f)*255.0f);
+			image_buffer[(j*w + i) * 3 + 0] = colour.x;
+			image_buffer[(j*w + i) * 3 + 1] = colour.y;
+			image_buffer[(j*w + i) * 3 + 2] = colour.z;
 		}
 	}
 
@@ -244,11 +266,11 @@ uint8_t* trace_packet(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origi
 			m = 0;
 			for (unsigned my = 0; my < ky; my++) {
 				for (unsigned mx = 0; mx < kx; mx++) {
-					if (attributes.hit[m]) {
-						memset(&image_buffer[((j+my)*w+i+mx)*3], 128, 3);
-					} else {
-						memset(&image_buffer[((j+my)*w+i+mx)*3], 0, 3);
-					}
+
+					vec3f1 colour(std::min(1.0f, (attributes.num_tests[0] / (float)K) / 200.0f)*255.0f);
+					image_buffer[((j+my)*w+i+mx)*3 + 0] = colour.x;
+					image_buffer[((j+my)*w+i+mx)*3 + 1] = colour.y;
+					image_buffer[((j+my)*w+i+mx)*3 + 2] = colour.z;
 					m++;
 				}
 			}
@@ -326,11 +348,12 @@ uint8_t* trace_bundle(Hierarchy &hierarchy, uint32_t w, uint32_t h, vec3f1 origi
 				
 				unsigned mx = morton_lut[k] % tile_w;
 				unsigned my = morton_lut[k] / tile_w;
-				if (attributes[m].hit[n]) {
-					memset(&image_buffer[((j+my)*w+i+mx)*3], 128, 3);
-				} else {
-					memset(&image_buffer[((j+my)*w+i+mx)*3], 0, 3);
-				}
+
+				float tests = attributes[0].num_tests[1] / (float)K + attributes[m].num_tests[0] / (float) N;
+				vec3f1 colour(std::min(1.0f, (tests / 200.0f))*255.0f);
+				image_buffer[((j+my)*w+i+mx)*3 + 0] = colour.x;
+				image_buffer[((j+my)*w+i+mx)*3 + 1] = colour.y;
+				image_buffer[((j+my)*w+i+mx)*3 + 2] = colour.z;
 			}
 		}
 	}
