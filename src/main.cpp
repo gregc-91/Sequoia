@@ -362,8 +362,8 @@ void benchmark()
 	Builder::build_hierarchy_morton(primitives);
 	t[i++] = clock();
 
-	uint32_t w = 1920*2;
-	uint32_t h = 1080*2;
+	uint32_t w = 1920;
+	uint32_t h = 1080;
 	uint8_t* image1 = trace(hierarchy, w, h, vec3f1(centre.x, centre.y, 2*scene_aabb.min.z - centre.z));
 	t[i++] = clock(); 
 	uint8_t* image2 = trace_packet<8>(hierarchy, w, h, vec3f1(centre.x, centre.y, 2*scene_aabb.min.z - centre.z));
