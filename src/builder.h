@@ -81,12 +81,25 @@ struct Bink {
 class Builder
 {
 public:
+	// A topdown recursive builder that uses openmp tasks to parallelise each split task
 	static Hierarchy build_hierarchy(std::vector<Triangle> &primitives);
+
+	// A builder based on partitioning a 32bit morton curve
 	static Hierarchy build_hierarchy_morton(std::vector<Triangle> &primitives);
+
+	// A builder based on partitioning a 64bit morton curve
 	static Hierarchy build_hierarchy_morton2(std::vector<Triangle> &primitives);
+
+	// A hybrid builder binning triangles to a grid and launching a build for each cell
 	static Hierarchy build_hierarchy_grid(std::vector<Triangle> &primitives);
+
+	// A version of grid that uses SIMD across x,y,z
 	static Hierarchy build_hierarchy_grid_sse(std::vector<Triangle> &primitives);
+
+	// A version of grid that uses SIMD across 8 input primitives
 	static Hierarchy build_hierarchy_grid_m128(std::vector<Triangle> &primitives);
+
+	//  A hybrid builder parallelising across primitives near the root and switching to recursive
 	static Hierarchy build_hierarchy_horizontal(std::vector<Triangle> &primitives);
 
 };
