@@ -19,6 +19,7 @@ The first argument should be a path to an `obj` file.
 ## Ouput
 
 Some timing info about the run will be displayed in standard out. A heatmap will also be created in the base directory:
+
 ![](images/render.bmp)
 
 # Performance
